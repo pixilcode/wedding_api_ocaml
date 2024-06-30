@@ -1,0 +1,4 @@
+(executable
+ (public_name wedding_api)
+ (name main)
+ (libraries wedding_api))
