@@ -56,5 +56,18 @@ let () =
           ~headers:["WWW-Authenticate", "Basic realm=\"Dream\""]
           "Unauthorized"
       )
-    )
+    );
+
+    Dream.post "/submitForm" (fun request ->
+      let%lwt body = Dream.multipart ~csrf:false request in
+      match body with
+      | `Ok [
+        "image", [ Some file_name, file ];
+        "image-name", [ None, image_name ]
+      ] ->
+        File.write_to_file ~append:false file_name file;
+        let body = Printf.sprintf "File name: <code>%s</code><br>Image name: <code>%s</code>" file_name image_name in
+        Dream.html body
+      | _ -> Dream.empty `Bad_Request
+    );
    ]
