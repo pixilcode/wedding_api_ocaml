@@ -1,2 +1,3 @@
 (library
- (name wedding_api))
+ (name wedding_api)
+ (libraries core))

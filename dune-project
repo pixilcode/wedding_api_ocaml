@@ -14,4 +14,4 @@
 (package
  (name wedding_api)
  (synopsis "A simple API for the wedding website")
- (depends ocaml dune))
+ (depends ocaml dune dream core))
