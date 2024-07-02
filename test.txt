@@ -1,5 +1,0 @@
-hello world!
-a=true
-b=1
-c=yay
-d=no!
