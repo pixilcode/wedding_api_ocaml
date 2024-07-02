@@ -1,5 +1,5 @@
-(executable
- (public_name wedding_api)
- (name main)
+(executables
+ (public_names api_server experiments)
+ (names server experiments)
  (libraries wedding_api dream core)
  (preprocess (pps lwt_ppx)))

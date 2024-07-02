@@ -1,3 +1,4 @@
 (library
  (name wedding_api)
- (libraries core))
+ (libraries core core_unix dream)
+ (preprocess (pps lwt_ppx)))
