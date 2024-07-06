@@ -2,9 +2,24 @@ open Wedding_api
 open Core
 
 let () =
-  print_endline "starting server...";
-  let config: Handler.config = { data_dir = "_test/" } in
-  Dream.run
+  Dream.log "Starting server...";
+
+  (* get the value of WEDDING_API_DATA_DIR, or use current dir as default *)
+  let data_dir = match Sys.getenv "WEDDING_API_DATA_DIR" with
+    | Some dir -> dir (* TODO: check if this is a valid dir, create it if it isn't created *)
+    | None -> "."
+  in
+
+  (* get the value of WEDDING_API_PORT, or use 5599 as default*)
+  let port = Sys.getenv "WEDDING_API_PORT"
+    |> Option.bind ~f:Int.of_string_opt (* TODO: if it the variable is set but an invalid int, print an error message *)
+    |> Option.value ~default:5599
+  in
+
+  (* create the server config *)
+
+  let config: Handler.config = { data_dir } in
+  Dream.run ~port
   @@ Dream.logger
   @@ Dream.router [
     Dream.scope "/api" [] [
