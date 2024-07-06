@@ -7,16 +7,19 @@ type config =
 let handle_rsvp config request =
   Dream.info (fun log -> log ~request "handling RSVP");
 
+  (* parse the body of the request as a form *)
   let%lwt body = Dream.form ~csrf:false request in
 
   match body with
   | `Ok ["guest_count", guest_count; "name", name] -> (
+    (* check if the `guest_count` field is an integer *)
     match Int.of_string_opt guest_count with 
       | Some guest_count when guest_count >= 0 ->
         Dream.info (fun log -> log ~request "adding RSVP for '%s' with %d guests" name guest_count);
 
+        (* add the RSVP to the CSV *)
         let%lwt () = Rsvp.add ~path:(config.data_dir ^ "/rsvp.csv") ~name ~guest_count in
-        Dream.redirect request "/rsvp/thank-you"
+        Dream.redirect request "/rsvp/thank-you" (* TODO: don't redirect once form on webpage doesn't require redirect *)
       | _ ->
         Dream.error (fun log ->
           log ~request "invalid guest count '%s'" guest_count);
