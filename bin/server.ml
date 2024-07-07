@@ -17,12 +17,14 @@ let () =
   in
 
   (* create the server config *)
-
   let config: Handler.config = { data_dir } in
+
+  (* start the server *)
   Dream.run ~port
   @@ Dream.logger
   @@ Dream.router [
     Dream.scope "/api" [] [
+      Dream.any "/health" (fun _ -> Dream.html "Healthy!");
       Dream.post "/rsvp" (Handler.handle_rsvp config);
       Dream.post "/note" (Handler.handle_note config);
     ];
