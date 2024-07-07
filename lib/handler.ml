@@ -1,4 +1,5 @@
 open Core
+open Core.Result.Monad_infix
 
 type config =
   { data_dir : string
@@ -12,20 +13,29 @@ let handle_rsvp config request =
 
   match body with
   | `Ok ["guest_count", guest_count; "name", name] -> (
-    (* check if the `guest_count` field is an integer *)
-    match Int.of_string_opt guest_count with 
-      | Some guest_count when guest_count >= 0 ->
-        Dream.info (fun log -> log ~request "adding RSVP for '%s' with %d guests" name guest_count);
 
-        (* add the RSVP to the CSV *)
-        let%lwt () = Rsvp.add ~path:(config.data_dir ^ "/rsvp.csv") ~name ~guest_count in
-        Dream.redirect request "/rsvp/thank-you" (* TODO: don't redirect once form on webpage doesn't require redirect *)
-      | _ ->
-        Dream.error (fun log ->
-          log ~request "invalid guest count '%s'" guest_count);
-        Dream.empty `Bad_Request
-  )
+    (* validate the RSVP info *)
+    let validation_result = Rsvp.(
+      Validate.name name
+      >>= fun name -> Validate.guest_count guest_count
+      >>= fun guest_count -> Ok (name, guest_count)
+    ) in
+
+    match validation_result with 
+    | Ok (valid_name, valid_guest_count) ->
+      (* add the RSVP to the CSV *)
+      Dream.info (fun log -> log ~request "adding RSVP for '%s' with %s guests" name guest_count);
+      let%lwt () = Rsvp.add ~path:(config.data_dir ^ "/rsvp.csv") ~name:valid_name ~guest_count:valid_guest_count in
+      Dream.redirect request "/rsvp/thank-you"
+    | Error error ->
+      (* Return a validation error *)
+      Dream.error (fun log ->
+        log ~request "invalid RSVP: %s" error);
+      Dream.html ~status:`Bad_Request (Printf.sprintf "Invalid RSVP: %s" error)
+  ) 
+
   | `Ok form_fields ->
+    (* Inform the user of invalid form fields *)
     let form_field_keys = 
       form_fields
       |> List.map ~f:fst
@@ -34,10 +44,15 @@ let handle_rsvp config request =
     in
     Dream.error (fun log ->
       log ~request "incorrect form fields: %s" form_field_keys);
-    Dream.empty `Bad_Request
+    let user_error_message =
+      Printf.sprintf
+        "Expected form fields 'name' and 'guest_count', but got: %s"
+        form_field_keys
+    in
+    Dream.html ~status:`Bad_Request user_error_message
   | _ ->
     Dream.error (fun log ->
       log ~request "invalid form");
-    Dream.empty `Bad_Request
+    Dream.html ~status:`Bad_Request "Invalid form"
 
 let handle_note _config _request = failwith "unimplemented"
