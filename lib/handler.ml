@@ -25,7 +25,7 @@ let handle_rsvp config request =
     | Ok (valid_name, valid_guest_count) ->
       (* add the RSVP to the CSV *)
       Dream.info (fun log -> log ~request "adding RSVP for '%s' with %s guests" name guest_count);
-      let%lwt () = Rsvp.add ~path:(config.data_dir ^ "/rsvp.csv") ~name:valid_name ~guest_count:valid_guest_count in
+      let%lwt () = Rsvp.add ~data_dir:config.data_dir ~name:valid_name ~guest_count:valid_guest_count in
       Dream.redirect request "/rsvp/thank-you"
     | Error error ->
       (* Return a validation error *)

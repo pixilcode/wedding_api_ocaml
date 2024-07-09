@@ -7,4 +7,4 @@ module Validate : sig
 end
 
 (** Add the given name and count to the RSVP CSV file *)
-val add : path:string -> name:Validate.validated_name -> guest_count:Validate.validated_guest_count -> unit Lwt.t
+val add : data_dir : string -> name : Validate.validated_name -> guest_count : Validate.validated_guest_count -> unit Lwt.t
