@@ -5,6 +5,36 @@ type config =
   { data_dir : string
   }
 
+(** Join form_fields into a comma-separated list *)
+let concat_form_fields form_fields =
+    form_fields
+    |> List.map ~f:fst
+    |> List.map ~f:(Printf.sprintf "'%s'")
+    |> String.concat ~sep:", "
+
+(** Inform the user of invalid form fields *)
+let invalid_form_fields request ~form_fields ~expected =
+  Dream.error (fun log ->
+    log ~request "incorrect form fields: %s" (concat_form_fields form_fields));
+  let expected =
+    expected
+    |> List.map ~f:(Printf.sprintf "'%s'")
+    |> String.concat ~sep:", "
+  in
+  let user_error_message =
+    Printf.sprintf
+      "Expected form fields %s, but got: %s"
+      expected
+      (concat_form_fields form_fields)
+  in
+  Dream.html ~status:`Bad_Request user_error_message
+
+(** Inform the user of an invalid form *)
+let invalid_form_error request =
+  Dream.error (fun log ->
+    log ~request "invalid form");
+  Dream.html ~status:`Bad_Request "Invalid form"
+
 let handle_rsvp config request =
   Dream.info (fun log -> log ~request "handling RSVP");
 
@@ -35,24 +65,54 @@ let handle_rsvp config request =
   ) 
 
   | `Ok form_fields ->
-    (* Inform the user of invalid form fields *)
-    let form_field_keys = 
-      form_fields
-      |> List.map ~f:fst
-      |> List.map ~f:(Printf.sprintf "'%s'")
-      |> String.concat ~sep:", "
-    in
-    Dream.error (fun log ->
-      log ~request "incorrect form fields: %s" form_field_keys);
-    let user_error_message =
-      Printf.sprintf
-        "Expected form fields 'name' and 'guest_count', but got: %s"
-        form_field_keys
-    in
-    Dream.html ~status:`Bad_Request user_error_message
+    invalid_form_fields
+      request
+      ~form_fields
+      ~expected:["guest_count"; "name"]
   | _ ->
-    Dream.error (fun log ->
-      log ~request "invalid form");
-    Dream.html ~status:`Bad_Request "Invalid form"
+    invalid_form_error request
 
-let handle_note _config _request = failwith "unimplemented"
+let handle_note config request =
+  Dream.info (fun log -> log "handling note");
+
+  (* parse the body of the request as a multipart form *)
+  let%lwt body = Dream.multipart ~csrf:false request in
+  match body with
+  | `Ok [
+    "name", [None, name];
+    "note", [None, note];
+    "user_image", [Some file_name, user_image];
+  ] -> (
+      let data_dir = config.data_dir in
+      let extension = File.extract_extension file_name in
+
+      let validation_result = Note.(
+        Validate.name name
+        >>= fun name -> Validate.note note
+        >>= fun note -> Validate.image user_image
+        >>= fun user_image -> Ok (name, note, user_image)
+      ) in
+
+      match validation_result with
+      | Ok (name, note, user_image) ->
+        let%lwt () = Note.save_user_note
+          ~data_dir
+          ~name
+          ~note
+          ~image:user_image
+          ~extension
+        in
+        Dream.redirect request "/note/thank-you"
+      | Error error ->
+        Dream.error (fun log ->
+          log "invalid note: %s" error);
+          Dream.html ~status:`Bad_Request (Printf.sprintf "Invalid note: %s" error)
+  )
+  | `Ok form_fields ->
+    invalid_form_fields
+      request
+      ~form_fields
+      ~expected:["name"; "note"; "user_image"]
+  | _ ->
+    invalid_form_error request
+
