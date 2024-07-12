@@ -1,6 +1,9 @@
 open Wedding_api
 open Core
 
+(* TODO: accept port and data dir as arguments as well *)
+(* TODO: create config file option for redirect actions for `/rsvp` and `/note` *)
+
 let () =
   Dream.log "Starting server...";
 
