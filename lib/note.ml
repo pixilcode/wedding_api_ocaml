@@ -16,6 +16,9 @@ let save_user_note ~data_dir ~name ~note ~image ~extension =
   let (Validate.Validated_note note) = note in
   let (Validate.Validated_image image) = image in
 
+  (* ensure that the `notes` directory is created *)
+  let%lwt () = File.create_dir (data_dir ^/ "notes") in
+
   (* get the request-specific note dir *)
   let note_dir = (
     let general_note_dir = data_dir ^/ "notes" in
