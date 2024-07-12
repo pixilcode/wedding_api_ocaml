@@ -21,12 +21,12 @@ let () =
   @@ Dream.logger
   @@ Dream.router [
     Dream.get "/file" (fun _ ->
-      let contents = File.read_file test_path in
+      let%lwt contents = File.read_file test_path in
       Dream.html contents
     );
     
     Dream.post "/createFile" (fun _ ->
-      File.create_file test_path;
+      let%lwt () = File.create_file test_path in
       Dream.html "file created!\n"
     );
 
@@ -35,7 +35,7 @@ let () =
       match body with
       | `Ok form_fields ->
         let file_contents = concat_fields form_fields in
-        File.write_to_file test_path file_contents;
+        let%lwt () = File.write_to_file test_path file_contents in
         Dream.html "Updated!\n"
       | _ -> Dream.empty `Bad_Request
     );
@@ -65,7 +65,7 @@ let () =
         "image", [ Some file_name, file ];
         "image-name", [ None, image_name ]
       ] ->
-        File.write_to_file ~append:false file_name file;
+        let%lwt () = File.write_to_file ~append:false file_name file in
         let body = Printf.sprintf "File name: <code>%s</code><br>Image name: <code>%s</code>" file_name image_name in
         Dream.html body
       | _ -> Dream.empty `Bad_Request

@@ -81,7 +81,7 @@ let add ~data_dir ~name ~guest_count =
   let%lwt () = create_personal_rsvp_file rsvp_dir name guest_count in
 
   (* create the RSVP file and directory if they aren't already created *)
-  let%lwt _ =
+  let%lwt ((), ()) =
     Lwt.both
       (create_rsvp_file_if_not_exists csv_path)
       (File.create_dir rsvp_dir)

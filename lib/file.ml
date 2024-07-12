@@ -19,9 +19,11 @@ let filename_string_of s =
   |> String.lowercase
 
 let create_file ?(contents="") path =
-  Out_channel.with_file path ~f:(fun file ->
-    Out_channel.output_string file contents
-  )
+  Lwt_io.with_file
+    path
+    ~mode:Lwt_io.output
+    ~flags:[Core_unix.O_CREAT; Core_unix.O_WRONLY; Core_unix.O_TRUNC]
+    (fun file -> Lwt_io.write file contents)
 
 let create_dir ?(permissions=0o755) path =
   Lwt.catch
@@ -32,12 +34,17 @@ let create_dir ?(permissions=0o755) path =
     )
 
 let read_file path =
-  In_channel.with_file path ~f:(fun file ->
-    let contents = In_channel.input_all file in
-    contents
-  )
+  Lwt_io.with_file
+    path
+    ~mode:Lwt_io.input
+    ~flags:[Core_unix.O_RDONLY]
+    (fun file -> Lwt_io.read file)
 
 let write_to_file ?(append=true) path contents =
-  Out_channel.with_file ~append path ~f:(fun file ->
-    Out_channel.output_string file contents
-  )
+  let append_flag_opt = if append then [Core_unix.O_APPEND] else [Core_unix.O_TRUNC] in
+  let flags = List.append [Core_unix.O_WRONLY] append_flag_opt in
+  Lwt_io.with_file
+    path
+    ~mode:Lwt_io.output
+    ~flags
+    (fun file -> Lwt_io.write file contents)
