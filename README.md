@@ -4,9 +4,6 @@ An API server written in OCaml, built for use with a wedding website.
 
 ## Running the server
 
-*NOTE: This server uses Unix-specific commands and thus can only be run on a
-*Unix OS*
-
 The server can be run with the following `dune` command:
 
 ```bash
