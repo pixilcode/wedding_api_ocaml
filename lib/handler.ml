@@ -84,7 +84,7 @@ let handle_note config request =
     "user_image", [Some file_name, user_image];
   ] -> (
       let data_dir = config.data_dir in
-      let extension = File.extract_extension file_name in
+      let extension = File.Name.extract_extension file_name in
 
       let validation_result = Note.(
         Validate.name name

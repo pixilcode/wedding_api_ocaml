@@ -25,8 +25,8 @@ let save_user_note ~data_dir ~name ~note ~image ~extension =
 
     let user_note_dir_name =
       name
-      |> File.filename_string_of
-      |> File.prepend_datetime_to
+      |> File.Name.filename_string_of
+      |> File.Name.prepend_datetime_to
     in
     general_note_dir ^/ user_note_dir_name
   ) in

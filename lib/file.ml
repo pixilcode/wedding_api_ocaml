@@ -1,22 +1,24 @@
 open Core
 
-let prepend_datetime_to file_name =
-  let now = Time_float.now () in
-  (* TODO: make timezone adjustable, rather than just MST *)
-  let zone = Time_float.Zone.of_utc_offset ~hours:(-6) in
-  let now_string = Time_float.to_filename_string ~zone now in
-  Printf.sprintf "%s-%s" now_string file_name
+module Name = struct
+  let prepend_datetime_to file_name =
+    let now = Time_float.now () in
+    (* TODO: make timezone adjustable, rather than just MST *)
+    let zone = Time_float.Zone.of_utc_offset ~hours:(-6) in
+    let now_string = Time_float.to_filename_string ~zone now in
+    Printf.sprintf "%s-%s" now_string file_name
 
-let extract_extension file_name =
-  file_name
-  |> String.rsplit2 ~on:'.'
-  |> Option.map ~f:snd
+  let extract_extension file_name =
+    file_name
+    |> String.rsplit2 ~on:'.'
+    |> Option.map ~f:snd
 
-let filename_string_of s =
-  s
-  |> String.substr_replace_all ~pattern:" " ~with_:"-"
-  |> String.filter ~f:(fun c -> Char.is_alpha c || Char.equal c '-')
-  |> String.lowercase
+  let filename_string_of s =
+    s
+    |> String.substr_replace_all ~pattern:" " ~with_:"-"
+    |> String.filter ~f:(fun c -> Char.is_alpha c || Char.equal c '-')
+    |> String.lowercase
+end
 
 let create_file ?(contents="") path =
   Lwt_io.with_file

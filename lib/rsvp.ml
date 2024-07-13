@@ -34,10 +34,10 @@ let create_rsvp_file_if_not_exists path =
 
 let generate_file_name name =
   (* convert the name to a valid file name string *)
-  let file_name = File.filename_string_of name in
+  let file_name = File.Name.filename_string_of name in
 
   (* prepend the date time *)
-  let file_name = File.prepend_datetime_to file_name in
+  let file_name = File.Name.prepend_datetime_to file_name in
 
   (* append the `txt` extension *)
   Printf.sprintf "%s.txt" file_name

@@ -1,11 +1,13 @@
-(** Prepend the current datetime to the given file name *)
-val prepend_datetime_to : string -> string
+module Name : sig
+	(** Prepend the current datetime to the given file name *)
+	val prepend_datetime_to : string -> string
 
-(** Extract the extension from the file name *)
-val extract_extension : string -> string option
+	(** Extract the extension from the file name *)
+	val extract_extension : string -> string option
 
-(** Convert the string into a valid file name string *)
-val filename_string_of : string -> string
+	(** Convert the string into a valid file name string *)
+	val filename_string_of : string -> string
+end
 
 (**
 	Create a file with optional [contents] at the given path
