@@ -9,6 +9,7 @@ depends: [
   "ocaml"
   "dune" {>= "3.15"}
   "dream"
+  "tyxml"
   "core"
   "core_unix"
   "odoc" {with-doc}

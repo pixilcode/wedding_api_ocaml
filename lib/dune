@@ -1,4 +1,4 @@
 (library
  (name wedding_api)
- (libraries core core_unix dream)
+ (libraries core core_unix dream tyxml)
  (preprocess (pps lwt_ppx)))

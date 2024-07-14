@@ -17,3 +17,9 @@ val handle_rsvp : config -> Dream.handler
 	[image] of the sender.
 *)
 val handle_note : config -> Dream.handler
+
+(**
+    Handle a request for a note HTML form
+*)
+
+val handle_note_form_request : Dream.handler

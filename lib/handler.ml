@@ -76,7 +76,7 @@ let handle_note config request =
   Dream.info (fun log -> log "handling note");
 
   (* parse the body of the request as a multipart form *)
-  let%lwt body = Dream.multipart ~csrf:false request in
+  let%lwt body = Dream.multipart request in
   match body with
   | `Ok [
     "name", [None, name];
@@ -112,7 +112,19 @@ let handle_note config request =
     invalid_form_fields
       request
       ~form_fields
-      ~expected:["name"; "note"; "user_image"]
+      ~expected:["csrf"; "name"; "note"; "user_image"]
+  | `Expired (_, _) ->
+    Dream.error (fun log ->
+      log "CSRF token expired");
+    Dream.html ~status:`Bad_Request "CSRF token expired"
+  | `Wrong_session _ ->
+    Dream.error (fun log ->
+      log "CSRF token mismatch");
+    Dream.html ~status:`Bad_Request "CSRF token mismatch"
   | _ ->
     invalid_form_error request
 
+let handle_note_form_request request =
+  Dream.info (fun log -> log "handling note form request");
+  let form = Form.note_form request in
+  Dream.html form
