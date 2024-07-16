@@ -29,7 +29,6 @@ let note_form request =
         a_name "note";
         a_id "note";
         a_required ();
-        a_placeholder "Your note"
       ] (txt "");
     ];
     div ~a:[a_class ["field user-image"]] [
