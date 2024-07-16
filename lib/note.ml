@@ -38,9 +38,16 @@ let save_user_note ~data_dir ~name ~note ~image ~extension =
     extension
     |> Option.map ~f:(fun ext -> "." ^ ext)
     |> Option.value ~default:"" in
+  
+  let note_path = note_dir ^/ "note.txt" in
+  let image_path = note_dir ^/ "image" ^ extension in
+  
+  Dream.info (fun log -> log "Saving note to %s" note_path);
+  Dream.info (fun log -> log "Saving image to %s" image_path);
+
   let%lwt ((), ()) =
     Lwt.both
-      (File.create_file ~contents:note_contents (note_dir ^/ "note.txt"))
-      (File.create_file ~contents:image (note_dir ^/ "image" ^ extension))
+      (File.create_file ~contents:note_contents note_path)
+      (File.create_file ~contents:image image_path)
   in
   Lwt.return_unit
