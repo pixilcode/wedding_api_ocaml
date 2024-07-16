@@ -37,6 +37,7 @@ let note_form request =
         a_name "user_image";
         a_id "user-image";
         a_input_type `File;
+        a_accept ["image/*"];
       ] ();
     ];
     button [txt "Send"];
