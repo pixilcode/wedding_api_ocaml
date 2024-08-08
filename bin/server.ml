@@ -45,6 +45,6 @@ let () =
       Dream.any "/health" (fun _ -> Dream.html "Healthy!");
       Dream.post "/rsvp" (Handler.handle_rsvp config);
       Dream.post "/note" (Handler.handle_note config);
-      Dream.get "/note/form" Handler.handle_note_form_request;
+      Dream.post "/csrf_token" (Handler.handle_csrf_token_request);
     ];
   ]

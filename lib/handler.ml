@@ -39,7 +39,7 @@ let handle_rsvp config request =
   Dream.info (fun log -> log ~request "handling RSVP");
 
   (* parse the body of the request as a form *)
-  let%lwt body = Dream.form ~csrf:false request in
+  let%lwt body = Dream.form request in
 
   match body with
   | `Ok ["guest_count", guest_count; "name", name] -> (
@@ -124,7 +124,7 @@ let handle_note config request =
   | _ ->
     invalid_form_error request
 
-let handle_note_form_request request =
-  Dream.info (fun log -> log "handling note form request");
-  let form = Form.note_form request in
-  Dream.html form
+let handle_csrf_token_request request =
+  Dream.info (fun log -> log "handling CSRF token request");
+  let csrf_token = Dream.csrf_token request in
+  Dream.respond csrf_token

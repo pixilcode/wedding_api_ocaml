@@ -19,7 +19,6 @@ val handle_rsvp : config -> Dream.handler
 val handle_note : config -> Dream.handler
 
 (**
-    Handle a request for a note HTML form
+	Handle a request for a CSRF token
 *)
-
-val handle_note_form_request : Dream.handler
+val handle_csrf_token_request : Dream.handler
