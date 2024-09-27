@@ -17,12 +17,16 @@ let () =
     | None -> "."
   in
 
-  (* get the value of WEDDING_API_PORT, or use 5599 as default*)
+  (* get the value of WEDDING_API_PORT, or use 5599 as default *)
   let port = Sys.getenv "WEDDING_API_PORT"
     |> Option.bind ~f:Int.of_string_opt (* TODO: if it the variable is set but an invalid int, print an error message *)
     |> Option.value ~default:5599
   in
 
+  (* get the value of WEDDING_API_STATIC_FILES *)
+  let static_files = Sys.getenv "WEDDING_API_STATIC_FILES" in
+
+  (* get the value of WEDDING_API_SECRET_FILE, or generate a random secret *)
   let dream_secret = Sys.getenv "WEDDING_API_SECRET_FILE"
     |> Option.map ~f:(fun file ->
       file
@@ -47,4 +51,10 @@ let () =
       Dream.post "/note" (Handler.handle_note config);
       Dream.post "/csrf_token" (Handler.handle_csrf_token_request);
     ];
+
+    (* serve static files if the WEDDING_API_STATIC_FILES env var is set *)
+    match static_files with
+    | Some static_files_loc -> Dream.get "/**" (Dream.static static_files_loc)
+    | None -> Dream.no_route;
   ]
+  (* TODO: add 404 and 500 error handling *)
