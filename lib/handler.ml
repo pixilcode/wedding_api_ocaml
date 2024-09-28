@@ -42,33 +42,63 @@ let handle_rsvp config request =
   let%lwt body = Dream.form request in
 
   match body with
-  | `Ok ["guest_count", guest_count; "name", name] -> (
+  | `Ok form_fields -> (
 
-    (* validate the RSVP info *)
-    let validation_result = Rsvp.(
-      Validate.name name
-      >>= fun name -> Validate.guest_count guest_count
-      >>= fun guest_count -> Ok (name, guest_count)
-    ) in
+    let name =
+      List.Assoc.find form_fields ~equal:String.equal "name" in
+    
+    let guest_count =
+      List.Assoc.find form_fields ~equal:String.equal "guest_count" in
 
-    match validation_result with 
-    | Ok (valid_name, valid_guest_count) ->
-      (* add the RSVP to the CSV *)
-      Dream.info (fun log -> log ~request "adding RSVP for '%s' with %s guests" name guest_count);
-      let%lwt () = Rsvp.add ~data_dir:config.data_dir ~name:valid_name ~guest_count:valid_guest_count in
-      Dream.redirect request "/rsvp/thank-you"
-    | Error error ->
-      (* Return a validation error *)
-      Dream.error (fun log ->
-        log ~request "invalid RSVP: %s" error);
-      Dream.html ~status:`Bad_Request (Printf.sprintf "Invalid RSVP: %s" error)
+    let location =
+      List.Assoc.find form_fields ~equal:String.equal "location" in
+    
+    match name, guest_count with
+    | Some name, Some guest_count -> (
+
+      (* validate the RSVP info *)
+      let validation_result = Rsvp.(
+        Validate.name name
+        >>= fun name -> Validate.guest_count guest_count
+        >>= fun guest_count -> Validate.location location
+        >>= fun location -> Ok (name, location, guest_count)
+      ) in
+
+      match validation_result with 
+      | Ok (valid_name, valid_location, valid_guest_count) -> (
+        (* add the RSVP to the CSV *)
+        Dream.info (fun log -> log ~request "adding RSVP for '%s' with %s guests" name guest_count);
+        let%lwt () =
+          Rsvp.add
+            ~data_dir:config.data_dir
+            ~name:valid_name
+            ~location:valid_location
+            ~guest_count:valid_guest_count
+        in
+        Dream.redirect request "/rsvp/thank-you"
+      )
+      | Error error -> (
+        (* Return a validation error *)
+        Dream.error (fun log ->
+          log ~request "invalid RSVP: %s" error);
+        Dream.html ~status:`Bad_Request (Printf.sprintf "Invalid RSVP: %s" error)
+      )
+    )
+    | _ -> (
+      invalid_form_fields
+        request
+        ~form_fields
+        ~expected:["guest_count"; "name"]
+    )
   ) 
-
-  | `Ok form_fields ->
-    invalid_form_fields
-      request
-      ~form_fields
-      ~expected:["guest_count"; "name"]
+  | `Expired (_, _) ->
+    Dream.error (fun log ->
+      log "CSRF token expired");
+    Dream.html ~status:`Bad_Request "CSRF token expired"
+  | `Wrong_session _ ->
+    Dream.error (fun log ->
+      log "CSRF token mismatch");
+    Dream.html ~status:`Bad_Request "CSRF token mismatch"
   | _ ->
     invalid_form_error request
 

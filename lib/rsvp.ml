@@ -2,6 +2,7 @@ open Core
 
 module Validate = struct
   type validated_name = Name of string
+  type validated_location = Location of string option
   type validated_guest_count = Guest_count of int
 
   let name name =
@@ -11,6 +12,17 @@ module Validate = struct
       let scrubbed_name = String.substr_replace_all ~pattern:"\"" ~with_:"''" name in
       let scrubbed_name = String.substr_replace_all ~pattern:"\n" ~with_:"\\n" scrubbed_name in
       Ok (Name scrubbed_name)
+
+  let location location =
+    match location with
+    | Some location ->
+      if String.length location < 1 then
+        Error "Location must be at least 1 character"
+      else
+        let scrubbed_location = String.substr_replace_all ~pattern:"\"" ~with_:"''" location in
+        let scrubbed_location = String.substr_replace_all ~pattern:"\n" ~with_:"\\n" scrubbed_location in
+        Ok (Location (Some scrubbed_location))
+    | None -> Ok (Location None)
 
   let guest_count guest_count =
     match Int.of_string_opt guest_count with
@@ -27,7 +39,7 @@ end
 let create_rsvp_file_if_not_exists path =
   let%lwt exists = Lwt_unix.file_exists path in
   if not exists then
-    let contents = "\"Name\",\"Guest Count\"\n" in
+    let contents = "\"Name\",\"Location\",\"Guest Count\"\n" in
     File.create_file ~contents path
   else
     Lwt.return ()
@@ -42,17 +54,19 @@ let generate_file_name name =
   (* append the `txt` extension *)
   Printf.sprintf "%s.txt" file_name
   
-let create_personal_rsvp_file path name guest_count =
+let create_personal_rsvp_file path name location guest_count =
   let file_name = generate_file_name name in
-  let file_contents = Printf.sprintf "name=%s\nguest_count=%d\n" name guest_count in
+  let file_contents = Printf.sprintf "name=%s\nguest_count=%d\nlocation=%s" name guest_count location in
 
   let file_path = path ^/ file_name in
 
   File.create_file ~contents:file_contents file_path
 
-let add ~data_dir ~name ~guest_count =
+let add ~data_dir ~name ~location ~guest_count =
   let Validate.Name name = name in
   let Validate.Guest_count guest_count = guest_count in
+  let Validate.Location location = location in
+  let location = Option.value location ~default: "NONE" in
 
   let csv_path = data_dir ^/ "rsvp.csv" in
   let rsvp_dir = data_dir ^/ "rsvp" in
@@ -64,7 +78,7 @@ let add ~data_dir ~name ~guest_count =
       (File.create_dir rsvp_dir)
   in
   
-  let%lwt () = create_personal_rsvp_file rsvp_dir name guest_count in
+  let%lwt () = create_personal_rsvp_file rsvp_dir name location guest_count in
 
-  let contents = Printf.sprintf "\"%s\",%d\n" name guest_count in
+  let contents = Printf.sprintf "\"%s\",%s\n,\"%n\"" name location guest_count in
   File.write_to_file ~append:true csv_path contents
