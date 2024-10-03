@@ -80,5 +80,5 @@ let add ~data_dir ~name ~location ~guest_count =
   
   let%lwt () = create_personal_rsvp_file rsvp_dir name location guest_count in
 
-  let contents = Printf.sprintf "\"%s\",%s\n,\"%n\"" name location guest_count in
+  let contents = Printf.sprintf "\"%s\",\"%s\",%d\n" name location guest_count in
   File.write_to_file ~append:true csv_path contents
